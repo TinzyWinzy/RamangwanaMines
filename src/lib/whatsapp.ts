@@ -20,7 +20,7 @@ export function formatLeadMessage(data: {
   phone: string;
   email: string;
   enquiryType: string;
-  serviceCategory?: string;
+  serviceId?: string;
   projectDescription?: string;
   budgetRange?: string;
   timeline?: string;
@@ -35,7 +35,7 @@ export function formatLeadMessage(data: {
     `*Email:* ${data.email}`,
     `*Type:* ${typeLabel.toUpperCase()}`,
   ];
-  if (data.serviceCategory) lines.push(`*Service:* ${data.serviceCategory.replace(/_/g, ' ')}`);
+  if (data.serviceId) lines.push(`*Service:* ${data.serviceId.replace(/_/g, ' ')}`);
   if (data.projectDescription) lines.push(`*Project:* ${data.projectDescription}`);
   if (data.budgetRange) lines.push(`*Budget:* ${data.budgetRange}`);
   if (data.timeline) lines.push(`*Timeline:* ${data.timeline}`);

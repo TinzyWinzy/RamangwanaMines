@@ -9,12 +9,13 @@ import { Select } from '../components/ui/Select';
 import { Textarea } from '../components/ui/Textarea';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
+import toast from 'react-hot-toast';
 import { createDoc } from '../lib/db';
 import { openWhatsApp, getWhatsAppNumber, formatLeadMessage } from '../lib/whatsapp';
 
 const leadFormSchema = z.object({
   enquiryType: z.string().min(1, 'Select an inquiry type'),
-  serviceCategory: z.string().optional(),
+  serviceId: z.string().optional(),
   fullName: z.string().min(2, 'Name is required'),
   companyName: z.string().min(1, 'Company name is required'),
   phone: z.string().min(8, 'Phone number is required'),
@@ -28,6 +29,12 @@ const leadFormSchema = z.object({
 });
 
 type LeadFormData = z.infer<typeof leadFormSchema>;
+
+const stepFields: Record<number, (keyof LeadFormData)[]> = {
+  1: ['enquiryType', 'serviceId'],
+  2: ['fullName', 'companyName', 'phone', 'email', 'whatsappNumber', 'source'],
+  3: ['projectLocation', 'projectDescription', 'budgetRange', 'timeline'],
+};
 
 export default function LeadForm() {
   const [searchParams] = useSearchParams();
@@ -46,16 +53,25 @@ export default function LeadForm() {
     handleSubmit,
     formState: { errors },
     watch,
+    trigger,
   } = useForm<LeadFormData>({
     resolver: zodResolver(leadFormSchema),
     defaultValues: {
       enquiryType: preselectedService ? 'quotation_request' : '',
-      serviceCategory: preselectedService,
+      serviceId: preselectedService,
       source: 'website',
     },
   });
 
   const enquiryType = watch('enquiryType');
+
+  const handleNextStep = async () => {
+    const fields = stepFields[step];
+    const isValid = await trigger(fields);
+    if (isValid) {
+      setStep((s) => Math.min(s + 1, 3));
+    }
+  };
 
   const onSubmit = async (data: LeadFormData) => {
     setIsSubmitting(true);
@@ -67,14 +83,14 @@ export default function LeadForm() {
         leadScore: 0,
         documents: [],
         budgetRange: data.budgetRange || 'Undisclosed',
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       setEnquiryId(id);
       setSubmittedData(data);
       setSubmitted(true);
+      toast.success('Enquiry submitted successfully!');
     } catch (err) {
       console.error(err);
+      toast.error('Failed to submit enquiry. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -88,7 +104,7 @@ export default function LeadForm() {
       phone: submittedData.phone,
       email: submittedData.email,
       enquiryType: submittedData.enquiryType,
-      serviceCategory: submittedData.serviceCategory,
+      serviceId: submittedData.serviceId,
       projectDescription: submittedData.projectDescription,
       budgetRange: submittedData.budgetRange,
       timeline: submittedData.timeline,
@@ -100,12 +116,11 @@ export default function LeadForm() {
 
   const handleShareOwnCopy = () => {
     if (!submittedData) return;
-    const message = `Thank you for your enquiry to Ramangwana Mining! We have received your request and will contact you shortly.\n\nEnquiry summary: ${submittedData.enquiryType.replace(/_/g, ' ')} - ${submittedData.serviceCategory?.replace(/_/g, ' ') || ''}\n\nYour reference: ${enquiryId.slice(0, 8)}`;
+    const message = `Thank you for your enquiry to Ramangwana Mining! We have received your request and will contact you shortly.\n\nEnquiry summary: ${submittedData.enquiryType.replace(/_/g, ' ')} - ${submittedData.serviceId?.replace(/_/g, ' ') || ''}\n\nYour reference: ${enquiryId.slice(0, 8)}`;
     const clientWhatsApp = submittedData.whatsappNumber || submittedData.phone;
     openWhatsApp(clientWhatsApp, message);
   };
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, 3));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   return (
@@ -188,7 +203,7 @@ export default function LeadForm() {
                       { value: 'consultancy', label: 'Consultancy' }, { value: 'project_management', label: 'Project Management' },
                       { value: 'equipment_hire', label: 'Equipment Hire' }, { value: 'trade_center', label: 'Trade Center' },
                       { value: 'recruitment', label: 'Recruitment' }, { value: 'training', label: 'Training' },
-                    ]} {...register('serviceCategory')} />
+                    ]} {...register('serviceId')} />
                     {preselectedPackage && (
                       <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 text-sm text-primary-700">
                         Selected package: <strong>{preselectedPackage}</strong>
@@ -247,7 +262,7 @@ export default function LeadForm() {
                 <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
                   {step > 1 ? <Button type="button" variant="ghost" onClick={prevStep}>Back</Button> : <div />}
                   {step < 3 ? (
-                    <Button type="button" variant="primary" onClick={nextStep}>Continue</Button>
+                    <Button type="button" variant="primary" onClick={handleNextStep}>Continue</Button>
                   ) : (
                     <Button type="submit" variant="primary" isLoading={isSubmitting}>Submit Enquiry</Button>
                   )}
