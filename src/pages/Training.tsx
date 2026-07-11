@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { PageSpinner } from '../components/ui/Spinner';
 import { useFirestoreCollection } from '../hooks/useFirestore';
@@ -9,20 +8,28 @@ import type { TrainingCourse } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { useState } from 'react';
 
+const fallbackCourses: any[] = [
+  { id: 'mine-blasting-cert', title: 'Mine Blasting Certification', slug: 'mine-blasting-certification', shortDescription: 'Complete blasting certification with practical field assessment.', category: 'blasting', duration: '2 weeks', priceUsd: 500, maxSeats: 20, isCertification: true, certificationTitle: 'Certified Mine Blaster - Level 1', thumbnailUrl: '/mineblasting.jpg', isActive: true, prerequisites: ['Basic mining knowledge', 'Physical fitness clearance', 'Minimum 18 years of age'] },
+  { id: 'grade-control', title: 'Grade Control & Sampling', slug: 'grade-control-sampling', shortDescription: 'Master sampling techniques and grade control for mining operations.', category: 'geology', duration: '3 days', priceUsd: 300, maxSeats: 25, isCertification: true, certificationTitle: 'Grade Control Specialist', thumbnailUrl: '/minedec.jpg', isActive: true, prerequisites: ['Basic geology understanding'] },
+  { id: 'shaft-safety', title: 'Shaft Safety & Rescue', slug: 'shaft-safety-rescue', shortDescription: 'Critical safety training for mine shaft operations.', category: 'safety', duration: '1 week', priceUsd: 400, maxSeats: 15, isCertification: true, certificationTitle: 'Shaft Safety & Rescue Certified', thumbnailUrl: '/closeupworkdone.jpg', isActive: true, prerequisites: ['Prior mining experience', 'Medical fitness certificate'] },
+  { id: 'equipment-op', title: 'Equipment Operation & Maintenance', slug: 'equipment-operation', shortDescription: 'Operate and maintain mining equipment safely and efficiently.', category: 'equipment', duration: '1 month', priceUsd: 800, maxSeats: 10, isCertification: true, certificationTitle: 'Mining Equipment Operator - Level 1', thumbnailUrl: '/machinery.jpg', isActive: true, prerequisites: ['Valid driver\'s license', 'Physical fitness'] },
+  { id: 'project-mgmt', title: 'Mining Project Management', slug: 'mining-project-management', shortDescription: 'Manage mining projects from exploration to production.', category: 'management', duration: '2 weeks', priceUsd: 600, maxSeats: 30, isCertification: false, thumbnailUrl: '/projectmanagement.jpg', isActive: true, prerequisites: ['Basic project management knowledge'] },
+  { id: 'drilling-tech', title: 'Drilling Techniques & Safety', slug: 'drilling-techniques-safety', shortDescription: 'Master drilling operations and safety protocols.', category: 'geology', duration: '1 week', priceUsd: 350, maxSeats: 12, isCertification: true, certificationTitle: 'Certified Drilling Operator', thumbnailUrl: '/boreholedrilling.jpg', isActive: true, prerequisites: ['High school diploma', 'Basic mechanical knowledge'] },
+];
+
 const categories = ['All', 'blasting', 'safety', 'geology', 'equipment', 'management'];
 
 export default function Training() {
-  const { data: courses, isLoading } = useFirestoreCollection<TrainingCourse>('trainingCourses', [where('isActive', '==', true), orderBy('createdAt', 'desc')]);
+  const { data: firestoreCourses, isLoading } = useFirestoreCollection<TrainingCourse>('trainingCourses', [where('isActive', '==', true), orderBy('createdAt', 'desc')]);
+  const courses = firestoreCourses.length > 0 ? firestoreCourses : fallbackCourses;
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filtered = courses.filter((c) => {
+  const filtered = courses.filter((c: any) => {
     if (activeCategory !== 'All' && c.category !== activeCategory) return false;
     if (searchTerm && !c.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
-
-  if (isLoading && courses.length === 0) return <div className="py-32"><PageSpinner /></div>;
 
   return (
     <div className="py-16 bg-gray-50 min-h-screen">
@@ -45,7 +52,7 @@ export default function Training() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((course) => (
+          {filtered.map((course: any) => (
             <Link key={course.id} to={`/training/${course.slug}`}>
               <Card padding="none" className="h-full flex flex-col">
                 <div className="relative h-48">

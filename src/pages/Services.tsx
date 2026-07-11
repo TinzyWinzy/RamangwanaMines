@@ -5,6 +5,20 @@ import { where, orderBy } from '../lib/db';
 import type { Service } from '../types';
 import { PageSpinner } from '../components/ui/Spinner';
 
+const fallbackServices: any[] = [
+  { id: 'drilling', name: 'Drilling Services', slug: 'drilling', category: 'drilling', shortDescription: 'Borehole drilling, core drilling, reverse circulation for exploration and water supply.', priceDisplay: 'From $500', images: ['/boreholedrilling.jpg'], isActive: true, sortOrder: 1 },
+  { id: 'exploration', name: 'Exploration & AKS', slug: 'exploration', category: 'exploration', shortDescription: 'Geological surveys, remote sensing, AKS exploration, mineral prospecting.', priceDisplay: 'From $800', images: ['/aksexploration.jpg'], isActive: true, sortOrder: 2 },
+  { id: 'blasting', name: 'Mine Blasting', slug: 'blasting', category: 'blasting', shortDescription: 'Mine blasting, controlled demolition, explosive handling, and site preparation.', priceDisplay: 'Quote-based', images: ['/mineblasting.jpg'], isActive: true, sortOrder: 3 },
+  { id: 'fabrication', name: 'Fabrication & Engineering', slug: 'fabrication', category: 'fabrication', shortDescription: 'Headgear fabrication, steel structures, mining equipment manufacturing and repair.', priceDisplay: 'From $5,000', images: ['/headgear.jpg'], isActive: true, sortOrder: 4 },
+  { id: 'consultancy', name: 'Mining Consultancy', slug: 'consultancy', category: 'consultancy', shortDescription: 'Mining industry consulting, feasibility studies, technical guidance.', priceDisplay: 'From $200/hr', images: ['/consultants.jpg'], isActive: true, sortOrder: 5 },
+  { id: 'project-mgmt', name: 'Project Management', slug: 'project_management', category: 'project_management', shortDescription: 'End-to-end mining project management and contractor oversight.', priceDisplay: 'From $2,000/mo', images: ['/projectmanagement.jpg'], isActive: true, sortOrder: 6 },
+  { id: 'equipment-hire', name: 'Equipment Hire', slug: 'equipment_hire', category: 'equipment_hire', shortDescription: 'Drilling rigs, compressors, generators, and mining equipment for hire.', priceDisplay: 'From $100/day', images: ['/machinery.jpg'], isActive: true, sortOrder: 7 },
+  { id: 'trade-center', name: 'Trade Center', slug: 'trade_center', category: 'trade_center', shortDescription: 'Pumps, generators, safety gear, and mining consumables supply.', priceDisplay: 'Varies', images: ['/tradecenter.jpg'], isActive: true, sortOrder: 8 },
+  { id: 'recruitment', name: 'Recruitment', slug: 'recruitment', category: 'recruitment', shortDescription: 'Mining workforce recruitment, vetting, and placement services.', priceDisplay: 'Quote-based', images: ['/issacMugwagwa.jpg'], isActive: true, sortOrder: 9 },
+  { id: 'training', name: 'Training Academy', slug: 'training', category: 'training', shortDescription: 'Certified mining training courses — blasting, safety, geology, equipment.', priceDisplay: 'From $100', images: ['/mineblasting.jpg'], isActive: true, sortOrder: 10 },
+  { id: 'safety', name: 'Safety Services', slug: 'safety', category: 'consultancy', shortDescription: 'Safety audits, risk assessments, and compliance management.', priceDisplay: 'From $500', images: ['/closeupworkdone.jpg'], isActive: true, sortOrder: 11 },
+];
+
 const serviceIcons: Record<string, string> = {
   drilling: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
   exploration: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
@@ -19,16 +33,15 @@ const serviceIcons: Record<string, string> = {
 };
 
 export default function Services() {
-  const { data: services, isLoading } = useFirestoreCollection<Service>('services', [where('isActive', '==', true), orderBy('sortOrder')]);
-
-  if (isLoading && services.length === 0) return <div className="py-32"><PageSpinner /></div>;
+  const { data: firestoreServices, isLoading } = useFirestoreCollection<Service>('services', [where('isActive', '==', true), orderBy('sortOrder')]);
+  const services = firestoreServices.length > 0 ? firestoreServices : fallbackServices;
 
   return (
     <div className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12"><h1 className="section-title">Our Services</h1><p className="section-subtitle">Comprehensive mining and industrial services under one roof</p></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((svc) => (
+          {services.map((svc: any) => (
             <Link key={svc.id} to={`/services/${svc.slug}`}>
               <Card padding="lg" className="h-full">
                 <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center mb-4">
