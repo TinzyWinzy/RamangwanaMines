@@ -5,13 +5,22 @@ import { useFirestoreCollection } from '../../hooks/useFirestore';
 import type { Enquiry, Project } from '../../types';
 import { formatDate } from '../../lib/utils';
 import { runSeed } from '../../lib/seed';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function AdminDashboard() {
-  const { data: enquiries } = useFirestoreCollection<Enquiry>('enquiries', []);
+  const { data: enquiries, isLoading } = useFirestoreCollection<Enquiry>('enquiries', []);
   const { data: projects } = useFirestoreCollection<Project>('projects', []);
   const [seeding, setSeeding] = useState(false);
   const [seeded, setSeeded] = useState(false);
+  const [autoSeeded, setAutoSeeded] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && enquiries.length === 0 && !autoSeeded) {
+      setAutoSeeded(true);
+      setSeeding(true);
+      runSeed().then(() => { setSeeded(true); setSeeding(false); }).catch(() => setSeeding(false));
+    }
+  }, [isLoading, enquiries.length, autoSeeded]);
 
   const newToday = enquiries.filter((e: any) => {
     const d = (e as any).createdAt?.toDate?.();
@@ -44,7 +53,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between mb-6">
         <div><h1 className="text-2xl font-bold text-gray-900">Dashboard</h1><p className="text-gray-500 mt-1">Overview of your mining enterprise operations</p></div>
         <Button variant="outline" size="sm" onClick={handleSeed} isLoading={seeding}>
-          {seeded ? 'Seeded!' : 'Seed Demo Data'}
+          {seeded ? 'Seeded!' : seeding ? 'Seeding...' : 'Re-Seed Demo Data'}
         </Button>
       </div>
 
@@ -60,9 +69,11 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {enquiries.length === 0 && (
+      {seeding && (<Card padding="lg" className="mb-6 text-center"><p className="text-gray-600 py-4">Setting up demo data with 11 services, 6 courses, 8 leads, 3 projects... {seeded ? 'Done!' : 'Please wait...'}</p></Card>)}
+
+      {!seeding && enquiries.length === 0 && (
         <Card padding="lg" className="mb-6">
-          <p className="text-center text-gray-500 py-4">No data yet. Click "Seed Demo Data" to populate Firestore with sample records.</p>
+          <p className="text-center text-gray-500 py-4">No data yet. Demo data auto-seeds on first visit. Click "Re-Seed Demo Data" to populate manually.</p>
         </Card>
       )}
 
