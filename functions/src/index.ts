@@ -109,11 +109,6 @@ export const safetyAlertEscalation = functions.firestore
     );
 
     if (newCriticalObs.length > 0) {
-      const admins = await db.collection('users')
-        .where('role', '==', 'admin')
-        .where('isActive', '==', true)
-        .get();
-
       for (const obs of newCriticalObs) {
         console.log(`CRITICAL SAFETY ALERT: ${obs.description} at ${obs.location}`);
         // TODO: Send email/WhatsApp notification to admins

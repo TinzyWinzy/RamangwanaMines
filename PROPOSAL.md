@@ -46,7 +46,7 @@ offline.
 - [x] Firebase project configured (Auth, Firestore, Storage)
 - [x] Firestore security rules deployed
 - [x] PWA enabled with offline support
-- [ ] Deploy Cloud Functions (`firebase deploy --only functions`)
+- [x] Cloud Functions deployed (12 functions)
 - [ ] Configure WhatsApp access token and phone ID
 - [ ] Configure PayNow integration ID and key
 - [ ] Set up custom domain (optional)
