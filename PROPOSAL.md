@@ -4,7 +4,7 @@
 
 ---
 
-## The Problem You Did Not Ask To Solve
+## What You Lose Every Month You Wait
 
 You run a mining enterprise. Your field teams log data on paper that reaches
 your desk three days late. Your leads fall through cracks between WhatsApp
@@ -13,16 +13,17 @@ cannot give them. Your training certificates are printed files that get lost.
 Your procurement tracking is a spreadsheet chain with no single source of
 truth.
 
-This is not a technology gap. It is a revenue leak.
+**Quantified monthly leak:**
 
-Every day you delay digitization, you lose:
-- Leads that went to a competitor who responded faster
-- Billable hours lost to manual reporting
-- Client trust eroded by opaque project status
-- Certification revenue from unmanaged course delivery
-- Procurement margin lost to untracked supply stages
+| Leak Source | Monthly Impact |
+|-------------|---------------|
+| Leads lost to slow response | 3-5 deals at $5K avg = $15K-$25K |
+| Billable hours in manual reporting | 40-80 hrs at $50/hr = $2K-$4K |
+| Untracked training certification | 10-30 students at $100 = $1K-$3K |
+| Procurement inefficiency margin | 2-5% on $50K spend = $1K-$2.5K |
+| Client churn from opaque reporting | 1 client at $20K/yr = $1.7K/mo |
 
-We quantified this before we wrote a single line of code.
+**Estimated total leakage: $20,000-$36,000 per month.**
 
 ---
 
@@ -55,7 +56,7 @@ All from one login. All synced in real time. All working offline.
 | 9 integrated modules | Portal, CRM, training, trade, safety, procurement, documents, ROI, admin |
 | 98% client satisfaction | Design validated against real user expectations |
 | 99.5% uptime architecture | Infrastructure built for production, not demo |
-| 40% faster deployment | We ship. We do not开会. |
+| 40% faster deployment | We ship. We do not meet to meet about meeting. |
 | 60% manual process reduction | Automation where your competitors still use paper |
 | 15 production systems shipped | This is not our first enterprise platform |
 
@@ -97,6 +98,59 @@ your name opens our next conversation.
 
 ---
 
+## The Investment
+
+**$2,500 USD total — deployed, configured, and your team trained.**
+
+Three payment structures available:
+
+| Option | Structure | Total |
+|--------|-----------|-------|
+| Accelerate | 100% upfront | **$2,500** |
+| Milestone | 50% on start + 50% on launch | **$2,500** |
+| Monthly | $500/mo for 6 months | **$3,000** ($500 premium for cashflow flexibility) |
+
+**What $2,500 covers:**
+
+- Full platform deployment on your domain
+- WhatsApp notification configuration
+- PayNow payment gateway setup
+- Data import of existing clients, projects, and courses
+- Admin team training session (half-day, in-person or remote)
+- 30 days of post-launch support and adjustments
+- Ownership of the deployed system. No ongoing license fees.
+
+**What it does not cover:**
+
+- WhatsApp Cloud API access token (Meta charges separately, ~$0.005 per message)
+- PayNow transaction fees (standard merchant rate)
+- Custom domain registration (if you want app.yourcompany.co.zw)
+
+**Recurring costs after launch:** Zero if you self-manage. Optional support
+retainer at $150/mo for priority maintenance and content updates.
+
+---
+
+## The ROI Math — 30-Day Payback
+
+| Line | Calculation | Value |
+|------|-------------|-------|
+| Leads recovered per month | 20 leads/mo x 15% recovery from auto-scoring | 3 leads |
+| Revenue from recovered leads | 3 leads x $5,000 average deal | **$15,000/mo** |
+| Hours saved per month | 50 hrs manual reporting + 20 hrs lead tracking | 70 hrs |
+| Cost of hours saved | 70 hrs x $25/hr blended staff cost | **$1,750/mo** |
+| Training revenue captured | 15 certs/mo at $100 instead of 5 | **$1,000/mo** |
+| Procurement savings | 2% on $50,000 monthly spend | **$1,000/mo** |
+
+**Total monthly value captured: $18,750**
+
+**Investment recovery: within 5 days of deployment.**
+
+If you only recover 10% of the estimated leakage, the system pays for itself
+in the first month.
+
+---
+
 ## What Deployment Looks Like
 
 | Phase | What Happens | Timeline |
@@ -122,22 +176,25 @@ needs configuration, not construction.
 | Printed certificates that expire in a drawer | Verifiable digital certificates |
 | Procurement tracked in email chains | Multi-stage visibility for every order |
 | Safety incidents documented after the fact | Auto-escalated alerts on critical events |
+| $20K-$36K monthly revenue leakage | System pays for itself in week one |
 
 ---
 
 ## Next Step
 
-You have seen the live system. You have walked through the modules. The
-question is not whether this works. It is deployed. It works now.
+The system is live. The URL is above. The math has been shown.
 
-The question is whether you want to be the mining operation in Zimbabwe that
-runs on a unified digital platform — or the one still chasing paper reports
-while your competitors have real-time visibility.
+You are not buying software. You are stopping a $20,000-$36,000 monthly leak
+for a one-time investment of $2,500. You are giving your clients real-time
+visibility they cannot get from any other mining house in Zimbabwe. You are
+building a digital operations backbone that scales with you.
 
-We will configure, deploy, and train your team in one week. You will own the
-system. We will be your partner, not your vendor.
+We can have you live in 5 days.
 
-The link is above. The system is live. The decision is yours.
+Send a confirmation to info@ramangwanamines.co.zw or call +263 77 584 5795.
+We will send the engagement letter and deployment schedule within 24 hours.
+
+---
 
 **Contact**
 
