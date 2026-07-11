@@ -1,7 +1,8 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { Sidebar } from './Sidebar';
+import { WhatsAppButton } from './WhatsAppButton';
 
 export function MainLayout() {
   return (
@@ -11,6 +12,7 @@ export function MainLayout() {
         <Outlet />
       </main>
       <Footer />
+      <WhatsAppButton />
     </div>
   );
 }
@@ -22,6 +24,7 @@ export function AdminLayout() {
       <main className="flex-1 bg-gray-50 p-6 overflow-auto">
         <Outlet />
       </main>
+      <WhatsAppButton />
     </div>
   );
 }

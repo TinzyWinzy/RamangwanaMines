@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_PAYNOW_INTEGRATION_ID: string;
   readonly VITE_PAYNOW_INTEGRATION_KEY: string;
   readonly VITE_WHATSAPP_NUMBER: string;
+  readonly VITE_WHATSAPP_ACCESS_TOKEN: string;
+  readonly VITE_WHATSAPP_PHONE_ID: string;
 }
 
 interface ImportMeta {

@@ -257,3 +257,192 @@ export const calculateLeadScore = functions.firestore
       priority: score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low',
     });
   });
+
+// WHATSAPP INTEGRATION
+
+const WHATSAPP_API = 'https://graph.facebook.com/v19.0';
+const ADMIN_WHATSAPP = '263775845795';
+
+async function sendWhatsAppMessage(to: string, body: string, accessToken: string, phoneId: string) {
+  const res = await fetch(`${WHATSAPP_API}/${phoneId}/messages`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'text',
+      text: { preview_url: false, body },
+    }),
+  });
+  return res.json();
+}
+
+// Send WhatsApp notification to admin when new enquiry is created
+export const notifyAdminOnNewEnquiry = functions.firestore
+  .document('enquiries/{enquiryId}')
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+    const phoneId = process.env.WHATSAPP_PHONE_ID;
+
+    if (!accessToken || !phoneId) {
+      console.log('WhatsApp not configured — skipping notification');
+      return null;
+    }
+
+    const typeLabel = (data.enquiryType || '').replace(/_/g, ' ');
+    const message = [
+      `*🔔 New Enquiry — Ramangwana Mining*`,
+      ``,
+      `*From:* ${data.fullName}`,
+      `*Company:* ${data.companyName}`,
+      `*Phone:* ${data.phone}`,
+      `*Email:* ${data.email}`,
+      `*Type:* ${typeLabel.toUpperCase()}`,
+    ];
+    if (data.serviceId) message.push(`*Service:* ${data.serviceId}`);
+    if (data.budgetRange) message.push(`*Budget:* ${data.budgetRange}`);
+    if (data.timeline) message.push(`*Timeline:* ${data.timeline}`);
+
+    try {
+      await sendWhatsAppMessage(ADMIN_WHATSAPP, message.join('\n'), accessToken, phoneId);
+      console.log(`WhatsApp notification sent for enquiry ${context.params.enquiryId}`);
+    } catch (err) {
+      console.error('WhatsApp notification failed:', err);
+    }
+
+    return null;
+  });
+
+// Send WhatsApp notification on payment confirmation
+export const notifyPaymentWhatsApp = functions.firestore
+  .document('invoices/{invoiceId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
+    if (!after) return null;
+
+    if (before.status !== 'paid' && after.status === 'paid') {
+      const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+      const phoneId = process.env.WHATSAPP_PHONE_ID;
+      if (!accessToken || !phoneId) return null;
+
+      const message = [
+        `*✅ Payment Confirmed — Ramangwana Mining*`,
+        ``,
+        `*Invoice:* ${after.invoiceNumber}`,
+        `*Amount:* $${(after.amountPaid || 0).toLocaleString()}`,
+        ``,
+        `Thank you for your payment.`,
+        `_Ramangwana Mining Enterprise_`,
+      ].join('\n');
+
+      try {
+        await sendWhatsAppMessage(ADMIN_WHATSAPP, message, accessToken, phoneId);
+      } catch (err) {
+        console.error('Payment WhatsApp notification failed:', err);
+      }
+    }
+
+    return null;
+  });
+
+// WhatsApp Webhook — receive incoming messages and store in Firestore
+export const whatsappWebhook = functions.https.onRequest(async (req, res) => {
+  if (req.method === 'GET') {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'ramangwana_webhook_2026';
+
+    if (mode === 'subscribe' && token === verifyToken) {
+      console.log('WhatsApp webhook verified');
+      res.status(200).send(challenge);
+    } else {
+      res.status(403).send('Forbidden');
+    }
+    return;
+  }
+
+  if (req.method === 'POST') {
+    const body = req.body;
+    console.log('WhatsApp webhook received:', JSON.stringify(body));
+
+    if (body.object === 'whatsapp_business_account') {
+      for (const entry of (body.entry || [])) {
+        for (const change of (entry.changes || [])) {
+          if (change.field === 'messages') {
+            const message = change.value?.messages?.[0];
+            const contact = change.value?.contacts?.[0];
+
+            if (message && contact) {
+              const msgData = {
+                from: contact.wa_id,
+                fromName: contact.profile?.name || '',
+                messageType: message.type,
+                text: message.text?.body || '',
+                timestamp: new Date(parseInt(message.timestamp) * 1000),
+                messageId: message.id,
+                direction: 'inbound',
+              };
+
+              await db.collection('whatsappMessages').add({
+                ...msgData,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+
+              console.log(`WhatsApp message stored from ${contact.wa_id}`);
+            }
+          }
+        }
+      }
+    }
+
+    res.status(200).send('OK');
+    return;
+  }
+
+  res.status(405).send('Method Not Allowed');
+});
+
+// Send WhatsApp follow-up to client (callable from admin)
+export const sendWhatsAppFollowUp = functions.https.onCall(async (data: {
+  to: string;
+  enquiryId: string;
+}, context) => {
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
+
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_ID;
+  if (!accessToken || !phoneId) throw new functions.https.HttpsError('failed-precondition', 'WhatsApp not configured');
+
+  const enquiryDoc = await db.collection('enquiries').doc(data.enquiryId).get();
+  if (!enquiryDoc.exists) throw new functions.https.HttpsError('not-found', 'Enquiry not found');
+
+  const enquiry = enquiryDoc.data();
+  const message = [
+    `*Ramangwana Mining — Follow-Up*`,
+    ``,
+    `Hi ${enquiry?.fullName},`,
+    ``,
+    `Thank you for your enquiry regarding ${(enquiry?.serviceId || 'our services').replace(/_/g, ' ')}. Our team would like to follow up on your request.`,
+    ``,
+    `Please reply to this message or call ${ADMIN_WHATSAPP} to discuss further.`,
+    ``,
+    `_Ramangwana Mining Enterprise_`,
+  ].join('\n');
+
+  const result = await sendWhatsAppMessage(data.to, message, accessToken, phoneId);
+
+  await db.collection('activities').add({
+    enquiryId: data.enquiryId,
+    userId: context.auth.uid,
+    type: 'whatsapp',
+    direction: 'outbound',
+    content: 'WhatsApp follow-up sent',
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { success: true, result };
+});
