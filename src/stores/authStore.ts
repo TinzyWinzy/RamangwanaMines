@@ -69,6 +69,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       role: 'client' as UserRole,
       isActive: true,
       addresses: [],
+      certifications: [],
       createdAt: new Date(),
     };
     await setDoc(doc(db, 'users', user.uid), {

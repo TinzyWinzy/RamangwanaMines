@@ -88,6 +88,19 @@ export interface Enquiry {
   createdAt: Date;
   updatedAt: Date;
   convertedToProjectId?: string;
+  roiCalculation?: ROICalculation;
+}
+
+export interface ROICalculation {
+  propertySize: number;
+  targetMineral: string;
+  budgetRange: string;
+  recommendedPackage: string;
+  recommendedPackageName: string;
+  expectedYield: string;
+  paybackMonths: number;
+  estimatedCost: number;
+  generatedAt: Date;
 }
 
 export interface EnquiryDocument {
@@ -95,6 +108,12 @@ export interface EnquiryDocument {
   url: string;
   type: string;
   uploadedAt: Date;
+  reviewedBy?: string;
+  reviewedAt?: Date;
+  status: 'pending_review' | 'approved' | 'revision_requested';
+  revisionNotes?: string;
+  version: number;
+  previousVersions?: { url: string; version: number; uploadedAt: Date }[];
 }
 
 export interface ConsultationBooking {
@@ -128,6 +147,76 @@ export interface Project {
   siteLocation?: { address: string; lat: number; lng: number };
   documents: EnquiryDocument[];
   createdAt: Date;
+  healthScore: number;
+  dailyLogs: DailyLog[];
+  milestones: Milestone[];
+  safetyObservations: SafetyObservation[];
+  procurementItems: ProcurementItem[];
+  activityFeed: ActivityFeedItem[];
+}
+
+export interface DailyLog {
+  id: string;
+  date: Date;
+  depthMeters: number;
+  rockType: string;
+  waterIngress: string;
+  photos: string[];
+  voiceNotes: string[];
+  notes: string;
+  loggedBy: string;
+  synced: boolean;
+  createdAt: Date;
+}
+
+export interface Milestone {
+  id: string;
+  name: string;
+  targetDate: Date;
+  completedDate?: Date;
+  status: 'pending' | 'in_progress' | 'completed' | 'delayed';
+  weight: number;
+}
+
+export interface SafetyObservation {
+  id: string;
+  type: 'hazard' | 'near_miss' | 'incident' | 'observation';
+  description: string;
+  photoUrl?: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'resolved' | 'escalated';
+  location: string;
+  reportedBy: string;
+  resolvedBy?: string;
+  resolutionNotes?: string;
+  createdAt: Date;
+  resolvedAt?: Date;
+}
+
+export interface ProcurementItem {
+  id: string;
+  name: string;
+  vendor: string;
+  poNumber: string;
+  stages: ProcurementStage[];
+  currentStage: string;
+  expectedDelivery: Date;
+  actualDelivery?: Date;
+}
+
+export interface ProcurementStage {
+  name: string;
+  completedAt?: Date;
+  photoUrl?: string;
+  notes?: string;
+}
+
+export interface ActivityFeedItem {
+  id: string;
+  type: 'log' | 'document' | 'milestone' | 'safety' | 'payment' | 'note';
+  content: string;
+  timestamp: Date;
+  userId: string;
 }
 
 export interface Quotation {
@@ -180,6 +269,16 @@ export interface AppUser {
   isActive: boolean;
   addresses: { label: string; address: string }[];
   createdAt: Date;
+  certifications: UserCertification[];
+}
+
+export interface UserCertification {
+  certificateNumber: string;
+  courseTitle: string;
+  issuedAt: Date;
+  expiresAt: Date;
+  certificateUrl: string;
+  status: 'active' | 'expired' | 'revoked';
 }
 
 export interface TrainingCourse {
@@ -254,6 +353,7 @@ export interface TrainingEnrollment {
   certificateUrl?: string;
   certificateIssuedAt?: Date;
   certificateNumber?: string;
+  certificateExpiresAt?: Date;
   paymentStatus: 'pending' | 'paid' | 'waived';
   createdAt: Date;
   updatedAt: Date;
@@ -305,4 +405,14 @@ export interface CmsPage {
   isPublished: boolean;
   updatedAt: Date;
   updatedBy: string;
+}
+
+export interface ProjectHealth {
+  score: number;
+  status: 'on_track' | 'at_risk' | 'delayed' | 'critical';
+  scheduleIndex: number;
+  costIndex: number;
+  qualityIndex: number;
+  safetyIndex: number;
+  lastCalculated: Date;
 }

@@ -5,6 +5,11 @@ import Home from './pages/Home';
 import Services from './pages/Services';
 import ServiceDetail from './pages/ServiceDetail';
 import LeadForm from './pages/LeadForm';
+import RoiCalculator from './pages/RoiCalculator';
+import ClientDashboard from './pages/ClientDashboard';
+import FieldLogging from './pages/FieldLogging';
+import DocumentApproval from './pages/DocumentApproval';
+import SafetyObservations from './pages/SafetyObservations';
 import Training from './pages/Training';
 import TrainingDetail from './pages/TrainingDetail';
 import MyTraining from './pages/MyTraining';
@@ -30,6 +35,11 @@ export default function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/lead-form" element={<LeadForm />} />
+          <Route path="/roi-calculator" element={<RoiCalculator />} />
+          <Route path="/client-dashboard" element={<ClientDashboard />} />
+          <Route path="/projects/:projectId/field-log" element={<FieldLogging />} />
+          <Route path="/projects/:projectId/documents" element={<DocumentApproval />} />
+          <Route path="/safety" element={<SafetyObservations />} />
           <Route path="/training" element={<Training />} />
           <Route path="/training/:slug" element={<TrainingDetail />} />
           <Route path="/my-training" element={<MyTraining />} />
