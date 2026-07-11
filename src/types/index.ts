@@ -1,0 +1,308 @@
+export interface Service {
+  id: string;
+  name: string;
+  slug: string;
+  category: ServiceCategory;
+  shortDescription: string;
+  fullDescription: string;
+  priceDisplay: string;
+  features: ServiceFeature[];
+  images: string[];
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+}
+
+export type ServiceCategory =
+  | 'drilling'
+  | 'exploration'
+  | 'fabrication'
+  | 'blasting'
+  | 'consultancy'
+  | 'project_management'
+  | 'equipment_hire'
+  | 'trade_center'
+  | 'recruitment'
+  | 'training';
+
+export interface ServiceFeature {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface ServicePackage {
+  id: string;
+  serviceId: string;
+  name: string;
+  description: string;
+  priceUsd: number;
+  features: string[];
+  isRecommended: boolean;
+}
+
+export type EnquiryType =
+  | 'quotation_request'
+  | 'consultation_booking'
+  | 'document_upload'
+  | 'project_brief'
+  | 'general_inquiry'
+  | 'training_enrollment';
+
+export type LeadStatus =
+  | 'new'
+  | 'contacted'
+  | 'qualified'
+  | 'proposal_sent'
+  | 'negotiating'
+  | 'won'
+  | 'lost'
+  | 'archived';
+
+export type LeadPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface Enquiry {
+  id: string;
+  enquiryType: EnquiryType;
+  serviceId: string;
+  servicePackageId?: string;
+  status: LeadStatus;
+  priority: LeadPriority;
+  fullName: string;
+  companyName: string;
+  phone: string;
+  email: string;
+  whatsappNumber?: string;
+  projectLocation?: string;
+  projectDescription?: string;
+  budgetRange?: '<$5K' | '$5K-$20K' | '$20K-$50K' | '$50K+' | 'Undisclosed';
+  timeline?: 'Immediate' | '1-3 months' | '3-6 months' | '6+ months';
+  documents: EnquiryDocument[];
+  assignedTo?: string;
+  source: string;
+  leadScore: number;
+  notes?: string;
+  followUpDate?: Date;
+  trainingCourseId?: string;
+  preferredBatchId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  convertedToProjectId?: string;
+}
+
+export interface EnquiryDocument {
+  filename: string;
+  url: string;
+  type: string;
+  uploadedAt: Date;
+}
+
+export interface ConsultationBooking {
+  id: string;
+  enquiryId: string;
+  preferredDate: Date;
+  preferredTime: 'Morning' | 'Afternoon' | 'Any';
+  meetingType: 'video_call' | 'phone_call' | 'site_visit' | 'office_visit';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  confirmationSent: boolean;
+  reminderSent: boolean;
+  notes?: string;
+  createdAt: Date;
+}
+
+export interface Project {
+  id: string;
+  enquiryId: string;
+  clientId: string;
+  serviceId: string;
+  title: string;
+  description: string;
+  status: 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
+  startDate: Date;
+  targetCompletion: Date;
+  actualCompletion?: Date;
+  budgetUsd: number;
+  invoicedUsd: number;
+  paidUsd: number;
+  projectManagerId: string;
+  siteLocation?: { address: string; lat: number; lng: number };
+  documents: EnquiryDocument[];
+  createdAt: Date;
+}
+
+export interface Quotation {
+  id: string;
+  enquiryId: string;
+  projectId?: string;
+  quotationNumber: string;
+  items: QuotationItem[];
+  subtotal: number;
+  vatAmount: number;
+  total: number;
+  terms: string;
+  validUntil: Date;
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
+  pdfUrl?: string;
+  createdAt: Date;
+}
+
+export interface QuotationItem {
+  description: string;
+  qty: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface Invoice {
+  id: string;
+  quotationId: string;
+  projectId: string;
+  invoiceNumber: string;
+  amountUsd: number;
+  amountPaid: number;
+  paynowPollUrl?: string;
+  paynowStatus?: 'pending' | 'paid' | 'failed';
+  status: 'unpaid' | 'partial' | 'paid' | 'overdue' | 'cancelled';
+  dueDate: Date;
+  paidAt?: Date;
+  createdAt: Date;
+}
+
+export type UserRole = 'client' | 'admin' | 'project_manager' | 'sales_rep' | 'trainer' | 'trainee';
+
+export interface AppUser {
+  uid: string;
+  name: string;
+  phone: string;
+  email: string;
+  companyName?: string;
+  role: UserRole;
+  isActive: boolean;
+  addresses: { label: string; address: string }[];
+  createdAt: Date;
+}
+
+export interface TrainingCourse {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  shortDescription: string;
+  category: string;
+  duration: string;
+  priceUsd: number;
+  maxSeats: number;
+  isCertification: boolean;
+  certificationTitle?: string;
+  syllabus: SyllabusModule[];
+  prerequisites: string[];
+  instructorId: string;
+  thumbnailUrl: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface SyllabusModule {
+  moduleNumber: number;
+  title: string;
+  description: string;
+  duration: string;
+  contentBlocks: ContentBlock[];
+}
+
+export interface ContentBlock {
+  type: string;
+  content: string;
+  mediaUrl?: string;
+}
+
+export interface TrainingBatch {
+  id: string;
+  courseId: string;
+  batchName: string;
+  startDate: Date;
+  endDate: Date;
+  location: string;
+  maxSeats: number;
+  enrolledCount: number;
+  status: 'open' | 'full' | 'in_progress' | 'completed' | 'cancelled';
+  instructorId: string;
+  schedule: BatchSchedule[];
+  createdAt: Date;
+}
+
+export interface BatchSchedule {
+  date: Date;
+  moduleNumber: number;
+  startTime: string;
+  endTime: string;
+  venue: string;
+}
+
+export interface TrainingEnrollment {
+  id: string;
+  userId: string;
+  courseId: string;
+  batchId: string;
+  enquiryId?: string;
+  status: 'enrolled' | 'in_progress' | 'completed' | 'dropped' | 'cancelled';
+  progress: number;
+  completedModules: number[];
+  assessmentScores: AssessmentScore[];
+  finalScore?: number;
+  passed?: boolean;
+  certificateUrl?: string;
+  certificateIssuedAt?: Date;
+  certificateNumber?: string;
+  paymentStatus: 'pending' | 'paid' | 'waived';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AssessmentScore {
+  moduleNumber: number;
+  score: number;
+  maxScore: number;
+  passed: boolean;
+  attemptedAt: Date;
+}
+
+export interface TrainingAssessment {
+  id: string;
+  courseId: string;
+  moduleNumber: number;
+  title: string;
+  questions: AssessmentQuestion[];
+  passingScore: number;
+  timeLimit: number;
+  createdAt: Date;
+}
+
+export interface AssessmentQuestion {
+  question: string;
+  type: 'multiple_choice' | 'true_false' | 'short_answer';
+  options: string[];
+  correctAnswer: string | number;
+  points: number;
+}
+
+export interface ActivityLog {
+  id: string;
+  enquiryId?: string;
+  projectId?: string;
+  userId: string;
+  type: string;
+  direction: 'inbound' | 'outbound';
+  content: string;
+  createdAt: Date;
+}
+
+export interface CmsPage {
+  id: string;
+  slug: string;
+  title: string;
+  content: { type: string; data: object }[];
+  isPublished: boolean;
+  updatedAt: Date;
+  updatedBy: string;
+}

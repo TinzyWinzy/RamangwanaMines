@@ -1,0 +1,22 @@
+{
+  "name": "Ramangwana Mining Enterprise Portal",
+  "short_name": "Ramangwana Mines",
+  "description": "B2B Lead Generation, Project Intake, CRM & Training PWA",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
