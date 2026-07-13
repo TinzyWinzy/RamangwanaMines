@@ -1,136 +1,42 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
-import { formatCurrency } from '../lib/utils';
-import { useState } from 'react';
-
-const demoModuleData: Record<string, { title: string; shortDescription: string; description: string; duration: string; priceUsd: number; isCertification: boolean; certificationTitle?: string; category: string; maxSeats: number; syllabus: { moduleNumber: number; title: string; description: string; duration: string }[]; prerequisites: string[] }> = {
-  'mine-blasting-certification': {
-    title: 'Mine Blasting Certification',
-    shortDescription: 'Comprehensive blasting certification covering explosive handling, safety protocols, and regulatory compliance.',
-    description: 'This course provides comprehensive training in mine blasting operations including explosive types, handling procedures, blast design, safety protocols, and Zimbabwe mining regulations. Successful candidates receive an industry-recognized certification.',
-    duration: '2 weeks',
-    priceUsd: 500,
-    isCertification: true,
-    certificationTitle: 'Certified Mine Blaster - Level 1',
-    category: 'blasting',
-    maxSeats: 20,
-    syllabus: [
-      { moduleNumber: 1, title: 'Introduction to Blasting', description: 'Overview of blasting in mining, types of explosives, and their properties.', duration: '2 days' },
-      { moduleNumber: 2, title: 'Explosive Handling & Storage', description: 'Safe handling, transportation, and storage of explosives per regulatory standards.', duration: '2 days' },
-      { moduleNumber: 3, title: 'Blast Design Fundamentals', description: 'Principles of blast design including burden, spacing, stemming, and delay timing.', duration: '3 days' },
-      { moduleNumber: 4, title: 'Safety & Risk Management', description: 'Risk assessment, safety protocols, personal protective equipment, and emergency response.', duration: '2 days' },
-      { moduleNumber: 5, title: 'Regulatory Compliance', description: 'Zimbabwe mining regulations, licensing requirements, and compliance documentation.', duration: '1 day' },
-      { moduleNumber: 6, title: 'Practical Field Assessment', description: 'Supervised practical blasting operations and final examination.', duration: '2 days' },
-    ],
-    prerequisites: ['Basic mining knowledge', 'Physical fitness clearance', 'Minimum 18 years of age'],
-  },
-  'grade-control-sampling': {
-    title: 'Grade Control & Sampling',
-    shortDescription: 'Learn grade control methodologies, sampling techniques, and quality assurance.',
-    description: 'Master grade control and sampling techniques used in modern mining operations. Covers sampling methods, QA/QC procedures, and data interpretation.',
-    duration: '3 days',
-    priceUsd: 300,
-    isCertification: true,
-    certificationTitle: 'Grade Control Specialist',
-    category: 'geology',
-    maxSeats: 25,
-    syllabus: [
-      { moduleNumber: 1, title: 'Sampling Fundamentals', description: 'Types of sampling, sample collection, and preparation methods.', duration: '1 day' },
-      { moduleNumber: 2, title: 'QA/QC Procedures', description: 'Quality assurance and quality control in sampling programs.', duration: '1 day' },
-      { moduleNumber: 3, title: 'Data Interpretation', description: 'Analysis, interpretation, and reporting of grade control data.', duration: '1 day' },
-    ],
-    prerequisites: ['Basic understanding of geology'],
-  },
-  'shaft-safety-rescue': {
-    title: 'Shaft Safety & Rescue',
-    shortDescription: 'Essential safety training for shaft operations, emergency response, and rescue procedures.',
-    description: 'Comprehensive shaft safety training covering operational procedures, hazard identification, emergency preparedness, and rescue operations in shaft environments.',
-    duration: '1 week',
-    priceUsd: 400,
-    isCertification: true,
-    certificationTitle: 'Shaft Safety & Rescue Certified',
-    category: 'safety',
-    maxSeats: 15,
-    syllabus: [
-      { moduleNumber: 1, title: 'Shaft Operations Basics', description: 'Types of shafts, equipment, and standard operating procedures.', duration: '1 day' },
-      { moduleNumber: 2, title: 'Hazard Identification', description: 'Identifying and assessing shaft-related hazards and risks.', duration: '1 day' },
-      { moduleNumber: 3, title: 'Emergency Response', description: 'Emergency protocols, evacuation procedures, and communication systems.', duration: '2 days' },
-      { moduleNumber: 4, title: 'Rescue Operations', description: 'Practical rescue techniques, equipment usage, and team coordination.', duration: '2 days' },
-    ],
-    prerequisites: ['Prior mining experience', 'Medical fitness certificate'],
-  },
-  'equipment-operation': {
-    title: 'Equipment Operation & Maintenance',
-    shortDescription: 'Operate and maintain mining equipment safely and efficiently.',
-    description: 'Hands-on training for mining equipment operation, preventive maintenance, and troubleshooting. Covers drill rigs, LHDs, and support equipment with practical exercises.',
-    duration: '1 month',
-    priceUsd: 800,
-    isCertification: true,
-    certificationTitle: 'Mining Equipment Operator - Level 1',
-    category: 'equipment',
-    maxSeats: 10,
-    syllabus: [
-      { moduleNumber: 1, title: 'Equipment Familiarization', description: 'Types of mining equipment, controls, and safety features.', duration: '3 days' },
-      { moduleNumber: 2, title: 'Operation Techniques', description: 'Practical operation of drills, LHDs, and support equipment.', duration: '2 weeks' },
-      { moduleNumber: 3, title: 'Preventive Maintenance', description: 'Daily checks, servicing, and troubleshooting.', duration: '3 days' },
-      { moduleNumber: 4, title: 'Safety & Assessment', description: 'Operational safety exam and practical assessment.', duration: '2 days' },
-    ],
-    prerequisites: ['Valid driver\'s license', 'Physical fitness'],
-  },
-  'mining-project-management': {
-    title: 'Mining Project Management',
-    shortDescription: 'Manage mining projects from exploration to production.',
-    description: 'Professional project management tailored for the mining industry covering the entire mine lifecycle from exploration through to closure.',
-    duration: '2 weeks',
-    priceUsd: 600,
-    isCertification: false,
-    category: 'management',
-    maxSeats: 30,
-    syllabus: [
-      { moduleNumber: 1, title: 'Mine Project Lifecycle', description: 'Exploration, development, production, and closure phases.', duration: '2 days' },
-      { moduleNumber: 2, title: 'Budgeting & Cost Control', description: 'Mine budgeting, CAPEX/OPEX, and cost tracking.', duration: '2 days' },
-      { moduleNumber: 3, title: 'Scheduling & Resource Planning', description: 'Gantt charts, critical path, resource allocation.', duration: '2 days' },
-      { moduleNumber: 4, title: 'Risk & Safety Management', description: 'Risk registers, safety KPIs, and incident management.', duration: '2 days' },
-      { moduleNumber: 5, title: 'Stakeholder Reporting', description: 'Executive dashboards, progress reports, and presentations.', duration: '2 days' },
-    ],
-    prerequisites: ['Basic project management knowledge'],
-  },
-  'drilling-techniques-safety': {
-    title: 'Drilling Techniques & Safety',
-    shortDescription: 'Master drilling operations and safety protocols.',
-    description: 'Practical drilling techniques including core drilling, RC drilling, and safety best practices for mining and exploration.',
-    duration: '1 week',
-    priceUsd: 350,
-    isCertification: true,
-    certificationTitle: 'Certified Drilling Operator',
-    category: 'geology',
-    maxSeats: 12,
-    syllabus: [
-      { moduleNumber: 1, title: 'Drilling Methods', description: 'Core drilling, RC, auger, and diamond drilling techniques.', duration: '2 days' },
-      { moduleNumber: 2, title: 'Drill Rig Operations', description: 'Setup, operation, and troubleshooting of drill rigs.', duration: '2 days' },
-      { moduleNumber: 3, title: 'Safety & Environmental', description: 'Drilling safety, environmental protection, and waste management.', duration: '1 day' },
-    ],
-    prerequisites: ['High school diploma', 'Basic mechanical knowledge'],
-  },
-};
-
-const demoBatches = [
-  { id: 'b1', batchName: 'Blasting Q3 2026', startDate: new Date('2026-08-15'), endDate: new Date('2026-08-29'), location: 'Eastlea Office', maxSeats: 20, enrolledCount: 8, status: 'open' as const, courseId: '', instructorId: '', schedule: [], createdAt: new Date() },
-  { id: 'b2', batchName: 'Blasting Q4 2026', startDate: new Date('2026-11-03'), endDate: new Date('2026-11-17'), location: 'On-site (Mutare)', maxSeats: 20, enrolledCount: 2, status: 'open' as const, courseId: '', instructorId: '', schedule: [], createdAt: new Date() },
-  { id: 'b3', batchName: 'Blasting Q2 2027', startDate: new Date('2027-03-10'), endDate: new Date('2027-03-24'), location: 'Virtual', maxSeats: 20, enrolledCount: 0, status: 'open' as const, courseId: '', instructorId: '', schedule: [], createdAt: new Date() },
-];
+import { PageSpinner } from '../components/ui/Spinner';
+import { formatCurrency, formatDate } from '../lib/utils';
+import { useAuth } from '../hooks/useAuth';
+import { useTraining } from '../hooks/useTraining';
+import toast from 'react-hot-toast';
 
 export default function TrainingDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const {
+    courses, batches, isLoading, subscribeBatches,
+    enrollInCourse,
+  } = useTraining(user?.uid);
+
   const [expandedModule, setExpandedModule] = useState<number | null>(null);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState('');
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
 
-  if (!slug || !demoModuleData[slug]) {
+  const course = courses.find((c) => c.slug === slug);
+
+  useEffect(() => {
+    if (course) {
+      const unsub = subscribeBatches(course.id);
+      return () => unsub();
+    }
+  }, [course?.id]);
+
+  if (isLoading && courses.length === 0) return <PageSpinner />;
+
+  if (!slug || !course) {
     return (
       <div className="py-16 text-center text-gray-500">
         Course not found. <Link to="/training" className="text-primary-500">Browse courses</Link>
@@ -138,12 +44,30 @@ export default function TrainingDetail() {
     );
   }
 
-  const course = demoModuleData[slug];
+  const openBatches = batches.filter((b) => b.status === 'open' && b.enrolledCount < b.maxSeats);
 
-  const handleEnroll = () => {
-    setIsEnrollModalOpen(false);
-    alert(`Enrollment confirmed for batch: ${selectedBatch}. You will receive a confirmation email.`);
-    navigate('/my-training');
+  const handleEnroll = async () => {
+    if (!user) {
+      navigate('/client-portal');
+      return;
+    }
+    if (!selectedBatch) return;
+    setEnrolling(true);
+    try {
+      await enrollInCourse({
+        userId: user.uid,
+        courseId: course.id,
+        batchId: selectedBatch,
+      });
+      setEnrolled(true);
+      toast.success('Enrolled successfully! Check your training dashboard.');
+      setIsEnrollModalOpen(false);
+      navigate('/my-training');
+    } catch (err) {
+      toast.error('Enrollment failed. Please try again.');
+    } finally {
+      setEnrolling(false);
+    }
   };
 
   return (
@@ -168,7 +92,7 @@ export default function TrainingDetail() {
               <p className="mt-3 text-gray-600 leading-relaxed">{course.description}</p>
             </div>
 
-            {course.isCertification && (
+            {course.isCertification && course.certificationTitle && (
               <Card padding="md">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                   <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
@@ -252,23 +176,23 @@ export default function TrainingDetail() {
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857" />
                   </svg>
-                  Max {course.maxSeats} seats per batch
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Multiple locations
+                  {openBatches.length} batch{openBatches.length !== 1 ? 'es' : ''} available
                 </div>
               </div>
 
               <Button
                 variant="primary"
                 className="w-full mt-6"
-                onClick={() => setIsEnrollModalOpen(true)}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    navigate('/client-portal');
+                    return;
+                  }
+                  setIsEnrollModalOpen(true);
+                }}
+                disabled={openBatches.length === 0}
               >
-                Enroll Now
+                {openBatches.length > 0 ? 'Enroll Now' : 'No Open Batches'}
               </Button>
             </Card>
           </div>
@@ -277,7 +201,10 @@ export default function TrainingDetail() {
 
       <Modal isOpen={isEnrollModalOpen} onClose={() => setIsEnrollModalOpen(false)} title="Select Batch" size="md">
         <div className="space-y-4">
-          {demoBatches.map((batch) => (
+          {openBatches.length === 0 && (
+            <p className="text-sm text-gray-500 text-center py-4">No batches currently open for enrollment.</p>
+          )}
+          {openBatches.map((batch) => (
             <label
               key={batch.id}
               className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -301,18 +228,21 @@ export default function TrainingDetail() {
                 </div>
               </div>
               <span className="text-sm text-gray-500">
-                {batch.startDate.toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {formatDate(batch.startDate)}
               </span>
             </label>
           ))}
-          <Button
-            variant="primary"
-            className="w-full"
-            disabled={!selectedBatch}
-            onClick={handleEnroll}
-          >
-            Confirm Enrollment
-          </Button>
+          {openBatches.length > 0 && (
+            <Button
+              variant="primary"
+              className="w-full"
+              disabled={!selectedBatch || enrolling}
+              isLoading={enrolling}
+              onClick={handleEnroll}
+            >
+              {isAuthenticated ? 'Confirm Enrollment' : 'Sign In to Enroll'}
+            </Button>
+          )}
         </div>
       </Modal>
     </div>
