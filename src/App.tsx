@@ -10,6 +10,7 @@ import ClientDashboard from './pages/ClientDashboard';
 import FieldLogging from './pages/FieldLogging';
 import DocumentApproval from './pages/DocumentApproval';
 import SafetyObservations from './pages/SafetyObservations';
+import OperationalEfficiency from './pages/OperationalEfficiency';
 import TradeCenter from './pages/TradeCenter';
 import Invoices from './pages/Invoices';
 import ProcurementTracker from './pages/ProcurementTracker';
@@ -38,6 +39,7 @@ export default function App() {
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/operational-efficiency" element={<OperationalEfficiency />} />
           <Route path="/services" element={<Services />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/lead-form" element={<LeadForm />} />

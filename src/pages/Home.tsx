@@ -4,7 +4,6 @@ import { Button } from '../components/ui/Button';
 import { useFirestoreCollection } from '../hooks/useFirestore';
 import { where, orderBy, limit } from '../lib/db';
 import type { Service, Project } from '../types';
-import { PageSpinner } from '../components/ui/Spinner';
 
 const fallbackServices = [
   { id: '1', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', title: 'Drilling', desc: 'Borehole drilling, core drilling, reverse circulation for exploration and water supply.' },
@@ -18,7 +17,7 @@ const fallbackServices = [
 const stats = [
   { value: '150+', label: 'Projects Completed' },
   { value: '50+', label: 'Hectares Surveyed' },
-  { value: '3', label: 'Offices Nationwide' },
+  { value: '12+', label: 'Years Experience' },
   { value: '98%', label: 'Client Satisfaction' },
 ];
 
@@ -28,6 +27,8 @@ const projectShowcaseFallback = [
   { title: 'Headgear — Trojan Mine', status: 'In Progress', img: '/headgear.jpg' },
 ];
 
+
+
 export default function Home() {
   const { data: services } = useFirestoreCollection<Service>('services', [where('isActive', '==', true), orderBy('sortOrder'), limit(6)]);
   const { data: projects } = useFirestoreCollection<Project>('projects', [where('status', 'in', ['in_progress', 'completed']), orderBy('createdAt', 'desc'), limit(3)]);
@@ -35,7 +36,7 @@ export default function Home() {
   const displayServices = services.length > 0 ? services : [];
   const displayProjects = projects.length > 0 ? projects : [];
   const showcase = displayProjects.length > 0
-    ? displayProjects.map((p) => ({ title: p.title, status: p.status === 'completed' ? 'Completed' : `${p.healthScore}% Health`, img: '/hero.jpg' }))
+    ? displayProjects.map((p) => ({ title: p.title, status: p.status === 'completed' ? 'Completed' : `${(p as any).healthScore}% Health`, img: '/hero.jpg' }))
     : projectShowcaseFallback;
 
   const serviceIcons: Record<string, string> = {
@@ -51,57 +52,94 @@ export default function Home() {
 
   return (
     <div>
+      {/* HERO */}
       <section className="relative bg-secondary text-white overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-secondary via-secondary/90 to-transparent z-10" />
         <img src="/hero.jpg" alt="Mining operations" className="absolute inset-0 w-full h-full object-cover opacity-40" />
         <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
           <div className="max-w-2xl">
-            <span className="text-primary-400 text-sm font-semibold uppercase tracking-wider">Mining Enterprise</span>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className="inline-flex items-center gap-1.5 bg-primary-500/20 border border-primary-500/30 text-primary-300 text-xs font-semibold px-3 py-1 rounded-full">
+                Zimbabwe-Based Contractor
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/20 text-gray-300 text-xs font-semibold px-3 py-1 rounded-full">
+                Full-Service Mining
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/20 text-gray-300 text-xs font-semibold px-3 py-1 rounded-full">
+                Digital Client Portal
+              </span>
+            </div>
+            <span className="text-primary-400 text-sm font-semibold uppercase tracking-wider">Ramangwana Mining Enterprise</span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mt-2">
-              Strength Above<br /><span className="text-primary-400">Ground</span>
+              Drilling. Blasting. Fabrication. Training.<br />
+              <span className="text-primary-400">Delivered with Total Visibility.</span>
             </h1>
             <p className="mt-6 text-lg text-gray-300 leading-relaxed max-w-lg">
-              From exploration and drilling to blasting, fabrication, and certified training — Ramangwana delivers end-to-end mining solutions with real-time project visibility.
+              Full-service mining contractor serving Zimbabwe — borehole drilling, mine blasting, steel fabrication, NQF-aligned training, and project management. Every engagement includes a digital portal with live project updates, verifiable certificates, and direct access to your operations team.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link to="/roi-calculator"><Button variant="accent" size="lg">Calculate Your ROI &#8594;</Button></Link>
-              <Link to="/lead-form"><Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">Request a Quote</Button></Link>
+              <Link to="/lead-form"><Button variant="accent" size="lg">Request a Quote →</Button></Link>
+              <Link to="/services"><Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">View Our Services</Button></Link>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      {/* STATS */}
+      <section className="py-16 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {stats.map((stat) => (
-              <div key={stat.label}><div className="text-4xl font-bold text-primary-500">{stat.value}</div><div className="text-gray-600 mt-1 text-sm">{stat.label}</div></div>
+              <div key={stat.label}>
+                <div className="text-4xl font-bold text-primary-500">{stat.value}</div>
+                <div className="text-gray-600 mt-1 text-sm">{stat.label}</div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* PLATFORM TEASER */}
+      <section className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="text-primary-500 text-sm font-semibold uppercase tracking-wider">The New Standard</span>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">Bankable Data. Zero Downtime. Investment-Ready Assets.</h2>
+          <p className="text-gray-600 mt-3 text-lg max-w-2xl mx-auto">Ramangwana delivers mining services with a technology platform that turns every data point into investor-grade documentation and every risk into a managed variable.</p>
+          <Link to="/operational-efficiency" className="inline-block mt-6">
+            <Button variant="accent" size="lg">See How It Works →</Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* ROI CALCULATOR CTA */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12"><h2 className="section-title">What's Your Mine Worth?</h2><p className="section-subtitle">Use our ROI calculator to find the right exploration package in 60 seconds</p></div>
+          <div className="text-center mb-12">
+            <h2 className="section-title">What's Your Mine Worth?</h2>
+            <p className="section-subtitle">Use our ROI calculator to find the right exploration package in 60 seconds</p>
+          </div>
           <div className="max-w-2xl mx-auto">
             <Card padding="lg" className="text-center bg-gradient-to-br from-primary-50 to-white border border-primary-100">
-              <div className="text-4xl mb-3">&#9971;</div>
+              <div className="text-4xl mb-3">⛏️</div>
               <h3 className="text-xl font-bold text-gray-900">Exploration ROI Calculator</h3>
               <p className="text-gray-600 mt-2 text-sm">Input your property size, target mineral, and budget — we'll recommend the optimal exploration package with expected yield and payback timeline.</p>
-              <Link to="/roi-calculator" className="inline-block mt-6"><Button variant="accent" size="lg">Start Calculating &#8594;</Button></Link>
+              <Link to="/roi-calculator" className="inline-block mt-6"><Button variant="accent" size="lg">Start Calculating →</Button></Link>
             </Card>
           </div>
         </div>
       </section>
 
+      {/* SERVICES */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12"><h2 className="section-title">Core Services</h2><p className="section-subtitle">Comprehensive mining solutions tailored to your project needs</p></div>
+          <div className="text-center mb-12">
+            <h2 className="section-title">Core Services</h2>
+            <p className="section-subtitle">Comprehensive mining solutions tailored to your project needs</p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(displayServices.length > 0 ? displayServices : fallbackServices).map((svc: any) => (
               <Link key={svc.id || svc.slug} to={`/services/${svc.slug || ''}`}>
-                <Card padding="lg">
+                <Card padding="lg" className="h-full hover:-translate-y-1 transition-transform duration-200">
                   <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center mb-4">
                     <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={(serviceIcons as any)[svc.category] || serviceIcons.default} />
@@ -117,28 +155,36 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ACTIVE PROJECTS */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12"><h2 className="section-title">Active Projects</h2><p className="section-subtitle">Real-time visibility into ongoing operations</p></div>
+          <div className="text-center mb-12">
+            <h2 className="section-title">Active Projects</h2>
+            <p className="section-subtitle">Real-time visibility into ongoing operations</p>
+          </div>
           <div className="grid md:grid-cols-3 gap-6">
             {showcase.map((p) => (
-              <Card key={p.title} padding="none">
+              <Card key={p.title} padding="none" className="overflow-hidden hover:-translate-y-1 transition-transform duration-200">
                 <img src={p.img} alt={p.title} className="w-full h-48 object-cover" />
-                <div className="p-4"><h4 className="font-semibold text-gray-900">{p.title}</h4><span className="text-sm text-primary-500 font-medium">{p.status}</span></div>
+                <div className="p-4 flex items-center justify-between">
+                  <h4 className="font-semibold text-gray-900 text-sm">{p.title}</h4>
+                  <span className="text-xs text-primary-500 font-semibold bg-primary-50 px-2 py-1 rounded-full">{p.status}</span>
+                </div>
               </Card>
             ))}
           </div>
-          <div className="text-center mt-8"><Link to="/client-dashboard"><Button variant="primary">View Project Command Center</Button></Link></div>
+          <div className="text-center mt-8"><Link to="/client-dashboard"><Button variant="primary">Client Portal</Button></Link></div>
         </div>
       </section>
 
+      {/* FINAL CTA */}
       <section className="py-20 bg-secondary text-white">
         <div className="max-w-3xl mx-auto text-center px-4">
-          <h2 className="text-3xl md:text-4xl font-bold">Ready to De-Risk Your Mine?</h2>
-          <p className="mt-4 text-gray-300 text-lg">Get an exploration ROI estimate, book a consultation, or enroll your team in certified training — all in one place.</p>
+          <h2 className="text-3xl md:text-4xl font-bold">Ready to Work With Us?</h2>
+          <p className="mt-4 text-gray-300 text-lg">Request a quote for drilling, blasting, or fabrication — or explore training courses and the ROI calculator for your next exploration project.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link to="/roi-calculator"><Button variant="accent" size="lg">Calculate ROI</Button></Link>
-            <Link to="/lead-form"><Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">Get Quote</Button></Link>
+            <Link to="/lead-form"><Button variant="accent" size="lg">Request a Quote</Button></Link>
+            <Link to="/roi-calculator"><Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">Exploration ROI Calculator</Button></Link>
           </div>
         </div>
       </section>
