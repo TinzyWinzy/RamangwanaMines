@@ -8,24 +8,44 @@ import { PageSpinner } from '../components/ui/Spinner';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { useAuth } from '../hooks/useAuth';
 import { useTraining } from '../hooks/useTraining';
+import { useFirestoreCollection } from '../hooks/useFirestore';
+import { where, orderBy } from '../lib/db';
+import type { TrainingCourse } from '../types';
 import toast from 'react-hot-toast';
+
+const fallbackCourses: TrainingCourse[] = [
+  { id: 'mine-blasting-cert', title: 'Mine Blasting Certification', slug: 'mine-blasting-certification', description: 'Comprehensive blasting certification covering explosive handling, safety protocols, blast design, and Zimbabwe mining regulations.', shortDescription: 'Complete blasting certification with practical field assessment.', category: 'blasting', duration: '2 weeks', priceUsd: 500, maxSeats: 20, isCertification: true, certificationTitle: 'Certified Mine Blaster - Level 1', instructorId: '', thumbnailUrl: '/mineblasting.jpg', isActive: true, prerequisites: ['Basic mining knowledge', 'Physical fitness clearance', 'Minimum 18 years of age'], syllabus: [{ moduleNumber: 1, title: 'Introduction to Blasting', description: 'Overview of blasting in mining, types of explosives, and their properties.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 2, title: 'Explosive Handling & Storage', description: 'Safe handling, transportation, and storage of explosives per regulatory standards.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 3, title: 'Blast Design Fundamentals', description: 'Principles of blast design including burden, spacing, stemming, and delay timing.', duration: '3 days', contentBlocks: [] }, { moduleNumber: 4, title: 'Safety & Risk Management', description: 'Risk assessment, safety protocols, PPE, and emergency response.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 5, title: 'Regulatory Compliance', description: 'Zimbabwe mining regulations, licensing requirements, and compliance documentation.', duration: '1 day', contentBlocks: [] }, { moduleNumber: 6, title: 'Practical Field Assessment', description: 'Supervised practical blasting operations and final examination.', duration: '2 days', contentBlocks: [] }], createdAt: new Date() },
+  { id: 'grade-control', title: 'Grade Control & Sampling', slug: 'grade-control-sampling', description: 'Learn grade control methodologies, sampling techniques, and quality assurance in mining operations.', shortDescription: 'Master sampling techniques and grade control for mining operations.', category: 'geology', duration: '3 days', priceUsd: 300, maxSeats: 25, isCertification: true, certificationTitle: 'Grade Control Specialist', instructorId: '', thumbnailUrl: '/minedec.jpg', isActive: true, prerequisites: ['Basic geology understanding'], syllabus: [{ moduleNumber: 1, title: 'Sampling Fundamentals', description: 'Types of sampling, sample collection, and preparation methods.', duration: '1 day', contentBlocks: [] }, { moduleNumber: 2, title: 'QA/QC Procedures', description: 'Quality assurance and quality control in sampling programs.', duration: '1 day', contentBlocks: [] }, { moduleNumber: 3, title: 'Data Interpretation', description: 'Analysis, interpretation, and reporting of grade control data.', duration: '1 day', contentBlocks: [] }], createdAt: new Date() },
+  { id: 'shaft-safety', title: 'Shaft Safety & Rescue', slug: 'shaft-safety-rescue', description: 'Essential safety training for shaft operations, emergency response, and rescue procedures.', shortDescription: 'Critical safety training for mine shaft operations.', category: 'safety', duration: '1 week', priceUsd: 400, maxSeats: 15, isCertification: true, certificationTitle: 'Shaft Safety & Rescue Certified', instructorId: '', thumbnailUrl: '/closeupworkdone.jpg', isActive: true, prerequisites: ['Prior mining experience', 'Medical fitness certificate'], syllabus: [{ moduleNumber: 1, title: 'Shaft Operations Basics', description: 'Types of shafts, equipment, and standard operating procedures.', duration: '1 day', contentBlocks: [] }, { moduleNumber: 2, title: 'Hazard Identification', description: 'Identifying and assessing shaft-related hazards.', duration: '1 day', contentBlocks: [] }, { moduleNumber: 3, title: 'Emergency Response', description: 'Emergency protocols, evacuation, and communication systems.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 4, title: 'Rescue Operations', description: 'Practical rescue techniques and team coordination.', duration: '2 days', contentBlocks: [] }], createdAt: new Date() },
+  { id: 'equipment-op', title: 'Equipment Operation & Maintenance', slug: 'equipment-operation', description: 'Hands-on training for mining equipment operation, preventive maintenance, and troubleshooting.', shortDescription: 'Operate and maintain mining equipment safely and efficiently.', category: 'equipment', duration: '1 month', priceUsd: 800, maxSeats: 10, isCertification: true, certificationTitle: 'Mining Equipment Operator - Level 1', instructorId: '', thumbnailUrl: '/machinery.jpg', isActive: true, prerequisites: ['Valid driver\'s license', 'Physical fitness'], syllabus: [{ moduleNumber: 1, title: 'Equipment Familiarization', description: 'Types of mining equipment, controls, and safety features.', duration: '3 days', contentBlocks: [] }, { moduleNumber: 2, title: 'Operation Techniques', description: 'Practical operation of drills, LHDs, and support equipment.', duration: '2 weeks', contentBlocks: [] }, { moduleNumber: 3, title: 'Preventive Maintenance', description: 'Daily checks, servicing, and troubleshooting.', duration: '3 days', contentBlocks: [] }, { moduleNumber: 4, title: 'Safety & Assessment', description: 'Operational safety exam and practical assessment.', duration: '2 days', contentBlocks: [] }], createdAt: new Date() },
+  { id: 'project-mgmt', title: 'Mining Project Management', slug: 'mining-project-management', description: 'Professional project management tailored for the mining industry.', shortDescription: 'Manage mining projects from exploration to production.', category: 'management', duration: '2 weeks', priceUsd: 600, maxSeats: 30, isCertification: false, instructorId: '', thumbnailUrl: '/projectmanagement.jpg', isActive: true, prerequisites: ['Basic project management knowledge'], syllabus: [{ moduleNumber: 1, title: 'Mine Project Lifecycle', description: 'Exploration, development, production, and closure phases.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 2, title: 'Budgeting & Cost Control', description: 'Mine budgeting, CAPEX/OPEX, and cost tracking.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 3, title: 'Scheduling & Resource Planning', description: 'Gantt charts, critical path, resource allocation.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 4, title: 'Risk & Safety Management', description: 'Risk registers, safety KPIs, and incident management.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 5, title: 'Stakeholder Reporting', description: 'Executive dashboards, progress reports, and presentations.', duration: '2 days', contentBlocks: [] }], createdAt: new Date() },
+  { id: 'drilling-tech', title: 'Drilling Techniques & Safety', slug: 'drilling-techniques-safety', description: 'Practical drilling techniques including core drilling, RC drilling, and safety best practices.', shortDescription: 'Master drilling operations and safety protocols.', category: 'geology', duration: '1 week', priceUsd: 350, maxSeats: 12, isCertification: true, certificationTitle: 'Certified Drilling Operator', instructorId: '', thumbnailUrl: '/boreholedrilling.jpg', isActive: true, prerequisites: ['High school diploma', 'Basic mechanical knowledge'], syllabus: [{ moduleNumber: 1, title: 'Drilling Methods', description: 'Core drilling, RC, auger, and diamond drilling.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 2, title: 'Drill Rig Operations', description: 'Setup, operation, and troubleshooting of drill rigs.', duration: '2 days', contentBlocks: [] }, { moduleNumber: 3, title: 'Safety & Environmental', description: 'Drilling safety, environmental protection, and waste management.', duration: '1 day', contentBlocks: [] }], createdAt: new Date() },
+];
+
+const fallbackBatches = [
+  { id: 'batch-blast-q3', courseId: 'mine-blasting-cert', batchName: 'Blasting Q3 2026', startDate: new Date('2026-08-15'), endDate: new Date('2026-08-29'), location: 'Eastlea Office', maxSeats: 20, enrolledCount: 8, status: 'open' as const, instructorId: '', schedule: [], createdAt: new Date() },
+  { id: 'batch-blast-q4', courseId: 'mine-blasting-cert', batchName: 'Blasting Q4 2026', startDate: new Date('2026-11-03'), endDate: new Date('2026-11-17'), location: 'On-site (Mutare)', maxSeats: 20, enrolledCount: 2, status: 'open' as const, instructorId: '', schedule: [], createdAt: new Date() },
+  { id: 'batch-grade-q3', courseId: 'grade-control', batchName: 'Geology Q3 2026', startDate: new Date('2026-09-01'), endDate: new Date('2026-09-03'), location: 'Eastlea Office', maxSeats: 25, enrolledCount: 12, status: 'open' as const, instructorId: '', schedule: [], createdAt: new Date() },
+  { id: 'batch-safety-q3', courseId: 'shaft-safety', batchName: 'Safety Q3 2026', startDate: new Date('2026-08-01'), endDate: new Date('2026-08-07'), location: 'On-site (Mazowe)', maxSeats: 15, enrolledCount: 15, status: 'full' as const, instructorId: '', schedule: [], createdAt: new Date() },
+];
 
 export default function TrainingDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const {
-    courses, batches, isLoading, subscribeBatches,
-    enrollInCourse,
-  } = useTraining(user?.uid);
+  const { data: firestoreCourses, isLoading: coursesLoading } = useFirestoreCollection<TrainingCourse>('trainingCourses', [where('isActive', '==', true), orderBy('createdAt', 'desc')]);
+
+  const allCourses = firestoreCourses.length > 0 ? firestoreCourses : fallbackCourses;
+  const course = allCourses.find((c) => c.slug === slug);
+
+  const { batches: fb, isLoading: batchLoading, subscribeBatches, enrollInCourse } = useTraining(user?.uid);
 
   const [expandedModule, setExpandedModule] = useState<number | null>(null);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState('');
   const [enrolling, setEnrolling] = useState(false);
-  const [enrolled, setEnrolled] = useState(false);
 
-  const course = courses.find((c) => c.slug === slug);
+  const batches = fb.length > 0 ? fb : fallbackBatches;
 
   useEffect(() => {
     if (course) {
@@ -34,7 +54,7 @@ export default function TrainingDetail() {
     }
   }, [course?.id]);
 
-  if (isLoading && courses.length === 0) return <PageSpinner />;
+  if (coursesLoading && allCourses.length === 0) return <PageSpinner />;
 
   if (!slug || !course) {
     return (
@@ -44,7 +64,7 @@ export default function TrainingDetail() {
     );
   }
 
-  const openBatches = batches.filter((b) => b.status === 'open' && b.enrolledCount < b.maxSeats);
+  const openBatches = batches.filter((b) => b.courseId === course.id && b.status === 'open' && b.enrolledCount < b.maxSeats);
 
   const handleEnroll = async () => {
     if (!user) {
@@ -59,7 +79,6 @@ export default function TrainingDetail() {
         courseId: course.id,
         batchId: selectedBatch,
       });
-      setEnrolled(true);
       toast.success('Enrolled successfully! Check your training dashboard.');
       setIsEnrollModalOpen(false);
       navigate('/my-training');
