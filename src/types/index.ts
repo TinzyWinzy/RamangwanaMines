@@ -261,7 +261,31 @@ export interface Invoice {
   createdAt: Date;
 }
 
-export type UserRole = 'client' | 'admin' | 'project_manager' | 'sales_rep' | 'trainer' | 'trainee';
+export type UserRole = 'client' | 'project_manager' | 'sales_rep' | 'trainer' | 'trainee' | 'admin' | 'super_admin';
+
+export const ROLE_HIERARCHY: Record<UserRole, number> = {
+  trainee: 0,
+  client: 1,
+  sales_rep: 2,
+  trainer: 2,
+  project_manager: 3,
+  admin: 4,
+  super_admin: 5,
+};
+
+export const ADMIN_ROLES: UserRole[] = ['admin', 'super_admin'];
+export const STAFF_ROLES: UserRole[] = ['project_manager', 'sales_rep', 'trainer', 'admin', 'super_admin'];
+
+export function hasMinRole(userRole: UserRole | null | undefined, minimumRole: UserRole): boolean {
+  if (!userRole) return false;
+  const userLevel = ROLE_HIERARCHY[userRole] ?? -1;
+  const requiredLevel = ROLE_HIERARCHY[minimumRole] ?? 0;
+  return userLevel >= requiredLevel;
+}
+
+export function isAdminRole(userRole: UserRole | null | undefined): boolean {
+  return userRole === 'admin' || userRole === 'super_admin';
+}
 
 export interface AppUser {
   uid: string;

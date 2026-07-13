@@ -32,6 +32,7 @@ import Certificates from './pages/Admin/Certificates';
 import GradeBook from './pages/Admin/GradeBook';
 import AssessmentBuilder from './pages/Admin/AssessmentBuilder';
 import WhatsAppMessages from './pages/Admin/WhatsAppMessages';
+import RoleManagement from './pages/Admin/RoleManagement';
 
 export default function App() {
   return (
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/admin/certificates" element={<Certificates />} />
           <Route path="/admin/grade-book" element={<GradeBook />} />
           <Route path="/admin/assessment-builder" element={<AssessmentBuilder />} />
+          <Route path="/admin/users" element={<RoleManagement />} />
           <Route path="/admin/whatsapp" element={<WhatsAppMessages />} />
         </Route>
       </Routes>
