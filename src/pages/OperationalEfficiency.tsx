@@ -150,6 +150,13 @@ export default function OperationalEfficiency() {
                     {i === 3 && 'Diaspora investors watch their borehole being drilled from London or Johannesburg. Photos and videos auto-upload with minimal data usage.'}
                   </p>
                 </div>
+                <div className="mt-6 flex gap-3">
+                  {i === 0 && <Link to="/field-logging"><Button variant="primary" size="sm">Try Field Logging →</Button></Link>}
+                  {i === 1 && <Link to="/rain-tracker"><Button variant="primary" size="sm">Open Risk Tracker →</Button></Link>}
+                  {i === 2 && <Link to="/roi-calculator"><Button variant="primary" size="sm">Open Valuator →</Button></Link>}
+                  {i === 3 && <Link to="/client-portal"><Button variant="primary" size="sm">Visit Client Portal →</Button></Link>}
+                  <Link to="/lead-form"><Button variant="ghost" size="sm">Request Demo</Button></Link>
+                </div>
               </div>
             ))}
           </div>

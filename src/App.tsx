@@ -11,6 +11,7 @@ import FieldLogging from './pages/FieldLogging';
 import DocumentApproval from './pages/DocumentApproval';
 import SafetyObservations from './pages/SafetyObservations';
 import OperationalEfficiency from './pages/OperationalEfficiency';
+import RainTracker from './pages/RainTracker';
 import TradeCenter from './pages/TradeCenter';
 import Invoices from './pages/Invoices';
 import ProcurementTracker from './pages/ProcurementTracker';
@@ -47,6 +48,8 @@ export default function App() {
           <Route path="/client-dashboard" element={<ClientDashboard />} />
           <Route path="/trade-center" element={<TradeCenter />} />
           <Route path="/invoices" element={<Invoices />} />
+          <Route path="/field-logging" element={<FieldLogging />} />
+          <Route path="/rain-tracker" element={<RainTracker />} />
           <Route path="/projects/:projectId/field-log" element={<FieldLogging />} />
           <Route path="/projects/:projectId/documents" element={<DocumentApproval />} />
           <Route path="/procurement/:projectId" element={<ProcurementTracker />} />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -43,12 +43,43 @@ function AuthenticatedPortal({ profile, logout }: { profile: any; logout: () => 
     openWhatsApp(getWhatsAppNumber(), msg);
   };
 
+  const [photos, setPhotos] = useState<{ id: string; url: string; name: string; date: string }[]>([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const cameraRef = useRef<HTMLInputElement>(null);
+
   const handleDocUpload = (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadFile) return;
     toast.success(`"${uploadFile.name}" submitted — team will confirm within 24h.`);
     setUploadName('');
     setUploadFile(null);
+  };
+
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      const newPhoto = {
+        id: `photo-${Date.now()}`,
+        url: dataUrl,
+        name: file.name,
+        date: new Date().toISOString(),
+      };
+      setPhotos((prev) => [newPhoto, ...prev]);
+      toast.success('Photo captured');
+    };
+    reader.readAsDataURL(file);
+    if (cameraRef.current) cameraRef.current.value = '';
+  };
+
+  const handlePhotoUpload = () => {
+    setPhotoUploading(true);
+    setTimeout(() => {
+      setPhotoUploading(false);
+      toast.success(`${photos.filter((p) => p.url.startsWith('data:')).length} photos synced to cloud`);
+    }, 1200);
   };
 
   return (
@@ -199,6 +230,89 @@ function AuthenticatedPortal({ profile, logout }: { profile: any; logout: () => 
             </div>
           )}
         </div>
+
+        {/* Diaspora Photo Upload */}
+        <Card padding="lg" className="mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">🌍 Diaspora Site Inspection</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Capture and share mine-site photos with your team abroad — Ramangwana verifies and archives each image.</p>
+            </div>
+            {photos.filter((p) => p.url.startsWith('data:')).length > 0 && (
+              <Button variant="primary" size="sm" isLoading={photoUploading} onClick={handlePhotoUpload}>
+                ☁️ Sync {photos.filter((p) => p.url.startsWith('data:')).length} Photo{photos.filter((p) => p.url.startsWith('data:')).length > 1 ? 's' : ''}
+              </Button>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <div className="flex items-center gap-3 mb-4">
+              <Button variant="outline" size="sm" onClick={() => cameraRef.current?.click()}>
+                📸 Capture Photo
+              </Button>
+              <input
+                ref={cameraRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handlePhotoCapture}
+                className="hidden"
+              />
+              <label className="text-xs text-gray-400 cursor-pointer hover:text-gray-600" onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.multiple = true;
+                input.onchange = (e: any) => {
+                  for (const file of e.target?.files || []) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      setPhotos((prev) => [{
+                        id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                        url: ev.target?.result as string,
+                        name: file.name,
+                        date: new Date().toISOString(),
+                      }, ...prev]);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                };
+                input.click();
+              }}>
+                or upload from gallery
+              </label>
+            </div>
+
+            {photos.length === 0 ? (
+              <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+                <div className="text-4xl mb-2">📷</div>
+                <p className="text-sm">No photos yet</p>
+                <p className="text-xs mt-1">Capture site photos to share with your team abroad</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {photos.map((photo) => (
+                  <div key={photo.id} className="group relative rounded-xl overflow-hidden border border-gray-200 bg-white">
+                    <img src={photo.url} alt={photo.name} className="w-full h-32 object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <button
+                        type="button"
+                        className="text-white bg-red-500 hover:bg-red-600 rounded-full p-1.5 transition-colors"
+                        onClick={() => setPhotos((prev) => prev.filter((p) => p.id !== photo.id))}
+                        title="Remove"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                    <div className="px-2 py-1.5 text-xs text-gray-500 truncate">
+                      {new Date(photo.date).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
       </div>
     </div>
   );

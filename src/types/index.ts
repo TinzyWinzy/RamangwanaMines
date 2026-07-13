@@ -60,6 +60,8 @@ export type LeadStatus =
   | 'archived';
 
 export type LeadPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type LeadTier = 'hot' | 'warm' | 'cold';
+export type LeadPersona = 'mine_operator' | 'investor' | 'training' | 'general';
 
 export interface Enquiry {
   id: string;
@@ -75,12 +77,14 @@ export interface Enquiry {
   whatsappNumber?: string;
   projectLocation?: string;
   projectDescription?: string;
-  budgetRange?: '<$5K' | '$5K-$20K' | '$20K-$50K' | '$50K+' | 'Undisclosed';
+  budgetRange?: string;
   timeline?: 'Immediate' | '1-3 months' | '3-6 months' | '6+ months';
   documents: EnquiryDocument[];
   assignedTo?: string;
   source: string;
   leadScore: number;
+  leadTier?: LeadTier;
+  persona?: LeadPersona;
   notes?: string;
   followUpDate?: Date;
   trainingCourseId?: string;
