@@ -7,7 +7,8 @@ import { Badge } from '../components/ui/Badge';
 import { PageSpinner } from '../components/ui/Spinner';
 import { Link } from 'react-router-dom';
 import { useFirestoreCollection } from '../hooks/useFirestore';
-import { orderBy } from '../lib/db';
+import { orderBy, updateDocById } from '../lib/db';
+import { uploadFile as uploadToStorage, getFilePath } from '../lib/storage';
 import type { Project } from '../types';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { openWhatsApp, getWhatsAppNumber } from '../lib/whatsapp';
@@ -35,24 +36,46 @@ function HealthRing({ score }: { score: number }) {
 function AuthenticatedPortal({ profile, logout }: { profile: any; logout: () => void }) {
   const { data: projects, isLoading } = useFirestoreCollection<Project>('projects', [orderBy('createdAt', 'desc')]);
   const [uploadName, setUploadName] = useState('');
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [docUploading, setDocUploading] = useState(false);
   const [activeProject, setActiveProject] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<{ id: string; url: string; name: string; date: string }[]>([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   const handleRequestUpdate = (projectTitle: string) => {
     const msg = `👋 Hi Ramangwana Mining,\n\nI'd like an update on my project: *${projectTitle}*.\n\nPlease reply with the latest progress. Thank you!`;
     openWhatsApp(getWhatsAppNumber(), msg);
   };
 
-  const [photos, setPhotos] = useState<{ id: string; url: string; name: string; date: string }[]>([]);
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const cameraRef = useRef<HTMLInputElement>(null);
-
-  const handleDocUpload = (e: React.FormEvent) => {
+  const handleDocUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadFile) return;
-    toast.success(`"${uploadFile.name}" submitted — team will confirm within 24h.`);
-    setUploadName('');
-    setUploadFile(null);
+    if (!selectedFile || !activeProject) return;
+    setDocUploading(true);
+    try {
+      const path = getFilePath('projects', activeProject, selectedFile.name);
+      const url = await uploadToStorage(path, selectedFile);
+      const docEntry = {
+        name: selectedFile.name,
+        fileName: selectedFile.name,
+        url,
+        type: selectedFile.type,
+        uploadedAt: new Date().toISOString(),
+        status: 'pending_review',
+        version: 1,
+      };
+      const p = projects.find((pr) => pr.id === activeProject) as any;
+      const existing = p?.documents || [];
+      await updateDocById('projects', activeProject, { documents: [...existing, docEntry] });
+      toast.success(`"${selectedFile.name}" uploaded successfully`);
+      setUploadName('');
+      setSelectedFile(null);
+    } catch (err) {
+      toast.error('Upload failed');
+      console.warn(err);
+    } finally {
+      setDocUploading(false);
+    }
   };
 
   const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,12 +97,31 @@ function AuthenticatedPortal({ profile, logout }: { profile: any; logout: () => 
     if (cameraRef.current) cameraRef.current.value = '';
   };
 
-  const handlePhotoUpload = () => {
+  const handlePhotoUpload = async () => {
+    const unsynced = photos.filter((p) => p.url.startsWith('data:'));
+    if (unsynced.length === 0) return;
     setPhotoUploading(true);
-    setTimeout(() => {
-      setPhotoUploading(false);
-      toast.success(`${photos.filter((p) => p.url.startsWith('data:')).length} photos synced to cloud`);
-    }, 1200);
+    let uploaded = 0;
+    for (const photo of unsynced) {
+      try {
+        const blob = await fetch(photo.url).then((r) => r.blob());
+        const file = new File([blob], photo.name, { type: blob.type || 'image/jpeg' });
+        const path = `photos/${activeProject || 'general'}/${Date.now()}_${photo.name}`;
+        const url = await uploadToStorage(path, file);
+        const photoEntry = { name: photo.name, url, date: photo.date };
+        if (activeProject) {
+          const p = projects.find((pr) => pr.id === activeProject) as any;
+          const existing = p?.photos || [];
+          await updateDocById('projects', activeProject, { photos: [...existing, photoEntry] });
+        }
+        setPhotos((prev) => prev.map((p) => p.id === photo.id ? { ...p, url } : p));
+        uploaded++;
+      } catch (err) {
+        console.warn('Photo upload failed:', photo.name, err);
+      }
+    }
+    setPhotoUploading(false);
+    if (uploaded > 0) toast.success(`${uploaded} photo${uploaded > 1 ? 's' : ''} synced to cloud`);
   };
 
   return (
@@ -200,10 +242,11 @@ function AuthenticatedPortal({ profile, logout }: { profile: any; logout: () => 
                               ) : (
                                 <div className="space-y-1">
                                   {(p.documents || []).map((doc: any) => (
-                                    <div key={doc.id} className="flex items-center gap-2 text-sm text-primary-600 hover:underline cursor-pointer">
-                                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <a key={doc.id || doc.name} href={doc.url} target="_blank" rel="noopener noreferrer"
+                                      className="flex items-center gap-2 text-sm text-primary-600 hover:underline cursor-pointer">
+                                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                       {doc.name || doc.fileName}
-                                    </div>
+                                    </a>
                                   ))}
                                 </div>
                               )}
@@ -211,12 +254,14 @@ function AuthenticatedPortal({ profile, logout }: { profile: any; logout: () => 
                             <div>
                               <h4 className="text-sm font-semibold text-gray-700 mb-2">Upload Document</h4>
                               <form onSubmit={handleDocUpload} className="flex gap-2 flex-wrap">
-                                <input
+                                  <input
                                   type="file"
-                                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                                   className="text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer"
                                 />
-                                <Button type="submit" variant="primary" size="sm" disabled={!uploadFile}>Upload</Button>
+                                <Button type="submit" variant="primary" size="sm" disabled={!selectedFile || docUploading} isLoading={docUploading}>
+                                  {docUploading ? 'Uploading...' : 'Upload'}
+                                </Button>
                               </form>
                               <p className="text-xs text-gray-400 mt-1">Supports: PDF, JPG, PNG, DWG, XLSX (max 10MB)</p>
                             </div>

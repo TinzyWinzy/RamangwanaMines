@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -28,6 +30,22 @@ interface Alert {
   acknowledged: boolean;
 }
 
+// Keep alerts in localStorage so they survive refresh
+const ALERTS_KEY = 'ramangwana-rain-alerts';
+
+function loadAlerts(): Alert[] {
+  try {
+    const raw = localStorage.getItem(ALERTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAlerts(alerts: Alert[]) {
+  localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
+}
+
 const SHAFT_LOCATIONS = [
   { value: 'proj-1', label: 'Shaft Rehabilitation — Mazowe Mine', depth: 85 },
   { value: 'proj-3', label: 'Headgear Footing — Trojan Mine', depth: 45 },
@@ -35,7 +53,7 @@ const SHAFT_LOCATIONS = [
 
 export default function RainTracker() {
   const [readings, setReadings] = useState<ShaftReading[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>(loadAlerts);
   const [projectId, setProjectId] = useState('proj-1');
   const [waterLevel, setWaterLevel] = useState('');
   const [structuralScore, setStructuralScore] = useState('95');
@@ -44,7 +62,36 @@ export default function RainTracker() {
 
   const shaftDepth = SHAFT_LOCATIONS.find((s) => s.value === projectId)?.depth || 80;
 
-  const handleLogReading = (e: React.FormEvent) => {
+  // Subscribe to Firestore readings for the selected project
+  useEffect(() => {
+    const q = query(
+      collection(db, 'projects', projectId, 'dailyLogs'),
+      orderBy('date', 'desc')
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const items: ShaftReading[] = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        items.push({
+          id: d.id,
+          projectId,
+          date: data.date?.toDate?.()?.toISOString() || data.date || new Date().toISOString(),
+          waterLevelMeters: data.waterLevelMeters ?? data.depthMeters ?? 0,
+          shaftDepth: data.shaftDepth ?? 80,
+          structuralScore: data.structuralScore ?? 95,
+          notes: data.notes || '',
+          loggedBy: data.loggedBy || '',
+        });
+      });
+      setReadings(items);
+    });
+    return () => unsub();
+  }, [projectId]);
+
+  // Persist alerts to localStorage
+  useEffect(() => { saveAlerts(alerts); }, [alerts]);
+
+  const handleLogReading = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!waterLevel || !loggedBy) {
       toast.error('Water level and your name are required');
@@ -53,7 +100,7 @@ export default function RainTracker() {
     const wl = parseFloat(waterLevel);
     const ss = parseInt(structuralScore);
     const reading: ShaftReading = {
-      id: `rd-${Date.now()}`,
+      id: '',
       projectId,
       date: new Date().toISOString(),
       waterLevelMeters: wl,
@@ -62,12 +109,29 @@ export default function RainTracker() {
       notes,
       loggedBy,
     };
-    setReadings((prev) => [reading, ...prev]);
-    toast.success('Reading logged');
 
+    // Save to Firestore
+    try {
+      await addDoc(collection(db, 'projects', projectId, 'dailyLogs'), {
+        waterLevelMeters: wl,
+        shaftDepth,
+        structuralScore: ss,
+        notes,
+        loggedBy,
+        date: serverTimestamp(),
+        synced: true,
+      });
+      toast.success('Reading saved to cloud');
+    } catch (err) {
+      toast.error('Failed to save reading');
+      console.warn(err);
+    }
+
+    // Generate alerts client-side
+    const newAlerts: Alert[] = [];
     const dangerThreshold = shaftDepth * 0.6;
     if (wl >= dangerThreshold) {
-      const alert: Alert = {
+      newAlerts.push({
         id: `alert-${Date.now()}`,
         project: SHAFT_LOCATIONS.find((s) => s.value === projectId)?.label || '',
         type: 'water',
@@ -75,12 +139,10 @@ export default function RainTracker() {
         severity: wl >= shaftDepth * 0.8 ? 'critical' : 'high',
         timestamp: new Date().toISOString(),
         acknowledged: false,
-      };
-      setAlerts((prev) => [alert, ...prev]);
-      toast.error(alert.message, { duration: 6000 });
+      });
     }
     if (ss < 60) {
-      const alert: Alert = {
+      newAlerts.push({
         id: `alert-str-${Date.now()}`,
         project: SHAFT_LOCATIONS.find((s) => s.value === projectId)?.label || '',
         type: 'structural',
@@ -88,10 +150,13 @@ export default function RainTracker() {
         severity: ss < 40 ? 'critical' : 'high',
         timestamp: new Date().toISOString(),
         acknowledged: false,
-      };
-      setAlerts((prev) => [alert, ...prev]);
-      toast.error(alert.message, { duration: 6000 });
+      });
     }
+    if (newAlerts.length > 0) {
+      setAlerts((prev) => [...newAlerts, ...prev]);
+      newAlerts.forEach((a) => toast.error(a.message, { duration: 6000 }));
+    }
+
     setWaterLevel('');
   };
 
@@ -99,7 +164,7 @@ export default function RainTracker() {
     setAlerts((prev) => prev.map((a) => a.id === id ? { ...a, acknowledged: true } : a));
   };
 
-  const currentReading = readings.find((r) => r.projectId === projectId);
+  const currentReading = readings[0];
   const activeAlerts = alerts.filter((a) => !a.acknowledged);
   const criticalCount = activeAlerts.filter((a) => a.severity === 'critical' || a.severity === 'high').length;
 

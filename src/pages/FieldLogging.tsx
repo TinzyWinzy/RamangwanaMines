@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -61,7 +63,7 @@ async function getOfflineLogs(): Promise<FieldLog[]> {
   });
 }
 
-async function markSynced(id: string): Promise<void> {
+async function markSyncedInIndexedDB(id: string): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -76,6 +78,22 @@ async function markSynced(id: string): Promise<void> {
     };
     tx.oncomplete = () => { db.close(); resolve(); };
     tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
+async function pushLogToFirestore(log: FieldLog): Promise<void> {
+  const { projectId, depthMeters, rockType, waterIngress, notes, loggedBy, createdAt } = log;
+  await addDoc(collection(db, 'projects', projectId, 'dailyLogs'), {
+    depthMeters,
+    rockType,
+    waterIngress,
+    notes,
+    loggedBy,
+    date: createdAt,
+    photos: [],
+    voiceNotes: [],
+    synced: true,
+    createdAt: serverTimestamp(),
   });
 }
 
@@ -124,15 +142,16 @@ export default function FieldLogging() {
     let syncedCount = 0;
     for (const log of unsynced) {
       try {
-        await markSynced(log.id);
+        await pushLogToFirestore(log);
+        await markSyncedInIndexedDB(log.id);
         syncedCount++;
-      } catch {
-        console.warn('Failed to sync log:', log.id);
+      } catch (err) {
+        console.warn('Failed to sync log:', log.id, err);
       }
     }
     await loadLogs();
     setSyncing(false);
-    if (syncedCount > 0) toast.success(`${syncedCount} log${syncedCount > 1 ? 's' : ''} synced`);
+    if (syncedCount > 0) toast.success(`${syncedCount} log${syncedCount > 1 ? 's' : ''} synced to cloud`);
     else toast('All logs up to date', { icon: '✓' });
   };
 
