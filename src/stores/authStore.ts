@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   User,
@@ -19,6 +21,7 @@ interface AuthState {
   isAuthenticated: boolean;
   init: () => () => void;
   login: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   register: (email: string, password: string, data: { name: string; phone: string; companyName?: string }) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<AppUser>) => Promise<void>;
@@ -94,6 +97,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       ? { uid: user.uid, ...profileData, role: profileData.role || role }
       : null;
     set({ firebaseUser: user, userProfile: profile, isAuthenticated: !!profile });
+  },
+
+  signInWithGoogle: async () => {
+    const provider = new GoogleAuthProvider();
+    const { user } = await signInWithPopup(auth, provider);
+    const role = await resolveRole(user);
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const profileData = userDoc.data() as Omit<AppUser, 'uid'> | undefined;
+    const profile: AppUser | null = profileData
+      ? { uid: user.uid, ...profileData, role: profileData.role || role }
+      : {
+          uid: user.uid,
+          name: user.displayName || '',
+          phone: user.phoneNumber || '',
+          email: user.email || '',
+          role,
+          isActive: true,
+          addresses: [],
+          certifications: [],
+          createdAt: new Date(),
+        };
+    // Create Firestore doc if first-time Google sign-in
+    if (!userDoc.exists()) {
+      await setDoc(doc(db, 'users', user.uid), {
+        ...profile,
+        createdAt: serverTimestamp(),
+      });
+    }
+    set({ firebaseUser: user, userProfile: profile, isAuthenticated: true });
   },
 
   register: async (email, password, data) => {

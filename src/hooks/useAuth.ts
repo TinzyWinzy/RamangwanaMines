@@ -24,6 +24,7 @@ export function useAuth() {
     isAdmin: isAdminRole(role),
     hasRole: (minimumRole: UserRole) => hasMinRole(role, minimumRole),
     login: store.login,
+    signInWithGoogle: store.signInWithGoogle,
     register: store.register,
     logout: store.logout,
     updateProfile: store.updateProfile,
